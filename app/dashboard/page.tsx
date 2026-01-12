@@ -104,7 +104,7 @@ const page = () => {
                         <div className='roundex-xl md:w-2/3'>
                             <div className='border-2 border-base-300 p-5 rounded-xl'>
                                 <h3 className='text-lg font-semibold mb-3'>
-                                    Statistiques ( en € )
+                                    Statistiques ( en FCFA )
                                 </h3>
                                 <ResponsiveContainer height={250} width="100%">
                                     <BarChart width={730} height={250} data={budgetData}>

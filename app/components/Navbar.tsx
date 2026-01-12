@@ -21,7 +21,7 @@ const Navbar = () => {
           <>
             <div className="flex justify-between items-center">
               <div className="flex text-2xl items-center font-bold">
-                e <span className="text-accent">.Track</span>
+                find <span className="text-accent">.Track</span>
               </div>
 
               <div className="md:flex hidden">
@@ -53,14 +53,14 @@ const Navbar = () => {
         ) : (
           <div className="flex items-center justify-between">
              <div className="flex text-2xl items-center font-bold">
-                e <span className="text-accent">.Track</span>
+                find <span className="text-accent">.Track</span>
               </div>
              <div className=" flex mt-2 justify-center">
                 <Link href={"/sign-in"} className="btn btn-sm">
                   Se connecter
                 </Link>
                 <Link href={"/sign-up"} className="btn mx-4 btn-sm btn-accent">
-                  S'inscrire
+                  Sinscrire
                 </Link>
                 
               </div>
