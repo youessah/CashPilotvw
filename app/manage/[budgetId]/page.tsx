@@ -1,25 +1,27 @@
 "use client"
-import { addTransactionToBudget, deleteBudget, deleteTransaction, getTrasactionsByBudgetId } from '@/app/actions'
+import { addRecurringTransaction, addTransactionToBudget, deleteBudget, deleteTransaction, getTrasactionsByBudgetId } from '@/app/actions'
 import BudgetItem from '@/app/components/BudgetItem'
 import Wrapper from '@/app/components/Wrapper'
 import { Budget } from '@/type'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import Notification from '@/app/components/Notification'
 import { Send, Trash } from 'lucide-react'
 import { redirect } from 'next/navigation'
 
-const page = ({ params }: { params: Promise<{ budgetId: string }> }) => {
+const Page = ({ params }: { params: Promise<{ budgetId: string }> }) => {
   const [budgetId, setBudgetId] = useState<string>('')
   const [budget, setBudget] = useState<Budget>()
   const [description, setDescription] = useState<string>('')
   const [amount, setAmount] = useState<string>('')
+  const [isRecurring, setIsRecurring] = useState<boolean>(false)
+  const [frequency, setFrequency] = useState<string>('MONTHLY')
 
   const [notification, setNotification] = useState<string>("");
   const closeNotification = () => {
     setNotification("")
   }
 
-  async function fetchBudgetData(budgetId: string) {
+  const fetchBudgetData = useCallback(async (budgetId: string) => {
     try {
       if (budgetId) {
         const budgetData = await getTrasactionsByBudgetId(budgetId)
@@ -31,7 +33,7 @@ const page = ({ params }: { params: Promise<{ budgetId: string }> }) => {
         "Erreur lors de la récupération du budget et des transactions:",
         error)
     }
-  }
+  }, []);
 
   useEffect(() => {
     const getId = async () => {
@@ -40,7 +42,7 @@ const page = ({ params }: { params: Promise<{ budgetId: string }> }) => {
       fetchBudgetData(resolvedParams.budgetId)
     }
     getId()
-  }, [params])
+  }, [params, fetchBudgetData])
 
   const handleAddTransaction = async () => {
     if (!amount || !description) {
@@ -53,14 +55,20 @@ const page = ({ params }: { params: Promise<{ budgetId: string }> }) => {
       if (isNaN(amountNumber) || amountNumber <= 0) {
         throw new Error("Le montant doit être un nombre positif.");
       }
-      const newTransaction = await addTransactionToBudget(budgetId, amountNumber, description)
+      if (isRecurring) {
+        await addRecurringTransaction(budgetId, amountNumber, description, frequency)
+        setNotification(`Transaction récurrente ajoutée avec succès`)
+      } else {
+        await addTransactionToBudget(budgetId, amountNumber, description)
+        setNotification(`Transaction ajoutée avec succès`)
+      }
 
-      setNotification(`Transaction ajoutée avec succès`)
       fetchBudgetData(budgetId)
       setAmount('')
       setDescription('')
-    } catch (error) {
-      setNotification(`Vous avez dépassé votre budget`)
+      setIsRecurring(false)
+    } catch {
+      setNotification(`Vous avez dépassé votre budget ou une erreur est survenue`)
     }
   }
 
@@ -129,6 +137,30 @@ const page = ({ params }: { params: Promise<{ budgetId: string }> }) => {
                 required
                 className=" input input-bordered"
               />
+
+              <div className="form-control">
+                <label className="label cursor-pointer justify-start">
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-accent mr-2"
+                    checked={isRecurring}
+                    onChange={(e) => setIsRecurring(e.target.checked)}
+                  />
+                  <span className="label-text">Transaction récurrente ?</span>
+                </label>
+              </div>
+
+              {isRecurring && (
+                <select
+                  className="select select-bordered w-full"
+                  value={frequency}
+                  onChange={(e) => setFrequency(e.target.value)}
+                >
+                  <option value="DAILY">Journalier</option>
+                  <option value="WEEKLY">Hebdomadaire</option>
+                  <option value="MONTHLY">Mensuel</option>
+                </select>
+              )}
 
               <button
                 onClick={handleAddTransaction}
@@ -200,4 +232,4 @@ const page = ({ params }: { params: Promise<{ budgetId: string }> }) => {
   )
 }
 
-export default page
+export default Page;

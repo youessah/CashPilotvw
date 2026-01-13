@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Wrapper from "../components/Wrapper";
 import { useUser } from "@clerk/nextjs";
 import EmojiPicker from "emoji-picker-react";
@@ -10,13 +10,13 @@ import Link from "next/link";
 import BudgetItem from "../components/BudgetItem";
 import { Landmark } from "lucide-react";
 
-const page = () => {
+const Page = () => {
   const { user } = useUser();
   const [budgetName, setBudgetName] = useState<string>("");
   const [budgetAmount, setBudgetAmount] = useState<string>("");
   const [showEmojiPicker, setShowEmojiPicker] = useState<boolean>(false);
   const [selectedEmoji, setSelectedEmoji] = useState<string>("");
-  const [budgets , setBudgets] = useState<Budget[]>([])
+  const [budgets, setBudgets] = useState<Budget[]>([])
 
   const [notification, setNotification] = useState<string>("");
   const closeNotification = () => {
@@ -35,17 +35,17 @@ const page = () => {
         throw new Error("Le montant doit être un nombre positif.");
       }
 
-      await addBudget (
-        user?.primaryEmailAddress?.emailAddress as string ,
+      await addBudget(
+        user?.primaryEmailAddress?.emailAddress as string,
         budgetName,
-        amount ,
+        amount,
         selectedEmoji,
       )
 
       fetchBudgets()
       const modal = document.getElementById("my_modal_3") as HTMLDialogElement
 
-      if(modal){
+      if (modal) {
         modal.close()
       }
 
@@ -61,27 +61,27 @@ const page = () => {
   };
 
 
-  const fetchBudgets = async () => {
-    if(user?.primaryEmailAddress?.emailAddress){
+  const fetchBudgets = useCallback(async () => {
+    if (user?.primaryEmailAddress?.emailAddress) {
       try {
-        const userBudgets = await  getBudgetsByUser(user?.primaryEmailAddress?.emailAddress)
+        const userBudgets = await getBudgetsByUser(user?.primaryEmailAddress?.emailAddress)
         setBudgets(userBudgets)
       } catch (error) {
         setNotification(`Erreur lors de la récupération des budgets: ${error}`);
       }
     }
-  }
+  }, [user?.primaryEmailAddress?.emailAddress]);
 
   useEffect(() => {
     fetchBudgets()
-  } , [user?.primaryEmailAddress?.emailAddress])
+  }, [fetchBudgets])
 
 
   return (
     <Wrapper>
 
       {notification && (
-       < Notification message={notification} onclose={closeNotification}></Notification>
+        < Notification message={notification} onclose={closeNotification}></Notification>
       )}
 
       <button
@@ -93,7 +93,7 @@ const page = () => {
         }
       >
         Nouveau Budget
-        <Landmark  className="w-4"/>
+        <Landmark className="w-4" />
       </button>
 
       <dialog id="my_modal_3" className="modal">
@@ -103,7 +103,7 @@ const page = () => {
               ✕
             </button>
           </form>
-          <h3 className="font-bold text-lg">Création d'un budjets</h3>
+          <h3 className="font-bold text-lg">Création d&apos;un budjets</h3>
           <p className="py-4">Permet de controler ces depenses facilement</p>
           <div className="w-full flex flex-col">
             <input
@@ -145,11 +145,11 @@ const page = () => {
       </dialog>
 
       <ul className="grid md:grid-cols-3 gap-4">
-         {budgets.map((budget) => (
-            <Link href={`/manage/${budget.id}`} key = {budget.id}>
-               <BudgetItem budget={budget} enableHover={1}></BudgetItem>
-            </Link>
-         ))}
+        {budgets.map((budget) => (
+          <Link href={`/manage/${budget.id}`} key={budget.id}>
+            <BudgetItem budget={budget} enableHover={1}></BudgetItem>
+          </Link>
+        ))}
       </ul>
 
 
@@ -157,4 +157,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default Page;

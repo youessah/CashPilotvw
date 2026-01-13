@@ -1,7 +1,7 @@
 "use server"
 
 import prisma from "@/lib/prisma";
-import { Budget, Transaction } from "@/type";
+
 
 export async function checkAndAddUser(email: string | undefined) {
     if (!email) return
@@ -134,7 +134,7 @@ export async function addTransactionToBudget(
             throw new Error('Le montant total des transactions dépasse le montant du budget.');
         }
 
-        const newTransaction = await prisma.transaction.create({
+        await prisma.transaction.create({
             data: {
                 amount,
                 description,
@@ -362,14 +362,14 @@ export async function getUserBudgetData(email: string) {
         }
 
         const data = user.budgets.map(budget => {
-            const totalTransactionsAmount = budget.transactions.reduce( (sum , transaction) => sum + transaction.amount ,0)
+            const totalTransactionsAmount = budget.transactions.reduce((sum, transaction) => sum + transaction.amount, 0)
             return {
                 budgetName: budget.name,
-                totalBudgetAmount : budget.amount,
+                totalBudgetAmount: budget.amount,
                 totalTransactionsAmount
             }
         })
-        
+
         return data
 
     } catch (error) {
@@ -381,21 +381,21 @@ export async function getUserBudgetData(email: string) {
 export const getLastTransactions = async (email: string) => {
     try {
         const transactions = await prisma.transaction.findMany({
-            where : {
-                budget : {
+            where: {
+                budget: {
                     user: {
-                       email : email 
+                        email: email
                     }
                 }
             },
-            orderBy : {
+            orderBy: {
                 createdAt: 'desc',
             },
-            take: 10 , 
+            take: 10,
             include: {
-                budget : {
+                budget: {
                     select: {
-                        name : true
+                        name: true
                     }
                 }
             }
@@ -404,7 +404,7 @@ export const getLastTransactions = async (email: string) => {
 
         const transactionsWithBudgetName = transactions.map(transaction => ({
             ...transaction,
-            budgetName: transaction.budget?.name || 'N/A', 
+            budgetName: transaction.budget?.name || 'N/A',
         }));
 
 
@@ -418,28 +418,108 @@ export const getLastTransactions = async (email: string) => {
 
 export const getLastBudgets = async (email: string) => {
     try {
-         const  budgets = await prisma.budget.findMany({
-            where : {
-                user : {
+        const budgets = await prisma.budget.findMany({
+            where: {
+                user: {
                     email
                 }
             },
             orderBy: {
                 createdAt: 'desc',
             },
-            take : 3,
+            take: 3,
             include: {
                 transactions: true
             }
 
-         })
+        })
 
-         return budgets
+        return budgets
 
     } catch (error) {
         console.error('Erreur lors de la récupération des derniers budgets: ', error);
         throw error;
     }
 }
+
+export async function addRecurringTransaction(
+    budgetId: string,
+    amount: number,
+    description: string,
+    frequency: string
+) {
+    try {
+        await prisma.recurringTransaction.create({
+            data: {
+                budgetId,
+                amount,
+                description,
+                frequency,
+                startDate: new Date(),
+            }
+        });
+    } catch (error) {
+        console.error('Erreur lors de l\'ajout de la transaction récurrente:', error);
+        throw error;
+    }
+}
+
+export async function syncRecurringTransactions(email: string) {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { email },
+            include: {
+                budgets: {
+                    include: {
+                        recurringTransactions: true
+                    }
+                }
+            }
+        });
+
+        if (!user) throw new Error("Utilisateur non trouvé");
+
+        const now = new Date();
+        const budgets = user.budgets;
+
+        for (const budget of budgets) {
+            for (const recurring of budget.recurringTransactions) {
+                let shouldExecute = false;
+                const lastExec = recurring.lastExecuted || recurring.startDate;
+                const diffTime = Math.abs(now.getTime() - lastExec.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (recurring.frequency === 'DAILY' && diffDays >= 1) {
+                    shouldExecute = true;
+                } else if (recurring.frequency === 'WEEKLY' && diffDays >= 7) {
+                    shouldExecute = true;
+                } else if (recurring.frequency === 'MONTHLY' && diffDays >= 30) {
+                    shouldExecute = true;
+                }
+
+                if (shouldExecute) {
+                    // Create the actual transaction
+                    await prisma.transaction.create({
+                        data: {
+                            amount: recurring.amount,
+                            description: recurring.description,
+                            emoji: budget.emoji,
+                            budgetId: budget.id
+                        }
+                    });
+
+                    // Update last executed date
+                    await prisma.recurringTransaction.update({
+                        where: { id: recurring.id },
+                        data: { lastExecuted: now }
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Erreur lors de la synchronisation des transactions récurrentes:', error);
+    }
+}
+
 
 

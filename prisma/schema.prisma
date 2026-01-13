@@ -25,6 +25,7 @@ model Budget {
   user         User         @relation(fields: [userId], references: [id])
   emoji        String?   
   transactions Transaction[]
+  recurringTransactions RecurringTransaction[]
   createdAt    DateTime     @default(now())
 }
 
@@ -36,4 +37,15 @@ model Transaction {
   budget       Budget?    @relation(fields: [budgetId], references: [id])
   emoji        String?  
   createdAt    DateTime   @default(now())
+}
+
+model RecurringTransaction {
+  id           String     @id @default(uuid())
+  description  String
+  amount       Float
+  frequency    String     // 'DAILY', 'WEEKLY', 'MONTHLY'
+  startDate    DateTime   @default(now())
+  lastExecuted DateTime?
+  budgetId     String
+  budget       Budget     @relation(fields: [budgetId], references: [id])
 }

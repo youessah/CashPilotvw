@@ -2,18 +2,18 @@
 
 import { Transaction } from '@/type'
 import { useUser } from '@clerk/nextjs'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { getTransactionsByEmailAndPeriod } from '../actions'
 import Wrapper from '../components/Wrapper'
 import TransactionItem from '../components/TransactionItem'
 
-const page = () => {
+const Page = () => {
 
   const { user } = useUser()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState<boolean>(false)
 
-  const fetchTransactions = async (period: string) => {
+  const fetchTransactions = useCallback(async (period: string) => {
     if (user?.primaryEmailAddress?.emailAddress) {
       setLoading(true)
       try {
@@ -24,11 +24,11 @@ const page = () => {
         console.error("Erreur lors de la récupération des transactions: ", err);
       }
     }
-  }
+  }, [user?.primaryEmailAddress?.emailAddress]);
 
   useEffect(() => {
     fetchTransactions("last30")
-  }, [user?.primaryEmailAddress?.emailAddress])
+  }, [fetchTransactions])
 
   return (
     <Wrapper>
@@ -73,4 +73,4 @@ const page = () => {
   )
 }
 
-export default page
+export default Page;

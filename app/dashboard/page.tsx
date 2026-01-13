@@ -1,28 +1,33 @@
 "use client"
 
 import { useUser } from '@clerk/nextjs';
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { getLastBudgets, getLastTransactions, getReachedBudgets, getTotalTransactionAmount, getTotalTransactionCount, getUserBudgetData } from '../actions';
 import Wrapper from '../components/Wrapper';
 import { CircleDollarSign, Landmark, PiggyBank } from 'lucide-react';
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 import { Budget, Transaction } from '@/type';
 import BudgetItem from '../components/BudgetItem';
 import Link from 'next/link';
 import TransactionItem from '../components/TransactionItem';
 
-const page = () => {
+const Page = () => {
     const { user } = useUser();
     const [totalAmount, setTotalAmount] = useState<number | null>(null)
     const [isLoading, setIsLoading] = useState(true);
     const [totalCount, setTotalCount] = useState<number | null>(null)
     const [reachedBudgetsRatio, setReachedBudgetsRatio] = useState<string | null>(null);
-    const [budgetData, setBudgetData] = useState<any[]>([]);
+    interface BudgetData {
+        budgetName: string;
+        totalBudgetAmount: number;
+        totalTransactionsAmount: number;
+    }
+    const [budgetData, setBudgetData] = useState<BudgetData[]>([]);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [budgets, setBudgets] = useState<Budget[]>([]);
 
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setIsLoading(true)
         try {
             const email = user?.primaryEmailAddress?.emailAddress as string
@@ -45,11 +50,11 @@ const page = () => {
         } catch (error) {
             console.error("Erreur lors de la récupération des données:", error);
         }
-    }
+    }, [user?.primaryEmailAddress?.emailAddress]);
 
     useEffect(() => {
         fetchData()
-    }, [user])
+    }, [fetchData])
 
     return (
         <Wrapper >
@@ -164,4 +169,4 @@ const page = () => {
     )
 }
 
-export default page
+export default Page;

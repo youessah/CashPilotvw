@@ -1,4 +1,3 @@
-
 export interface Budget {
     id: string;
     createdAt: Date;
@@ -6,6 +5,7 @@ export interface Budget {
     amount: number;
     emoji: string | null;
     transactions?: Transaction[];
+    recurringTransactions?: RecurringTransaction[];
 }
 
 export interface Transaction {
@@ -16,4 +16,14 @@ export interface Transaction {
     createdAt: Date;
     budgetName?: string;
     budgetId?: string | null;
+}
+
+export interface RecurringTransaction {
+    id: string;
+    amount: number;
+    description: string;
+    frequency: string; // 'DAILY', 'WEEKLY', 'MONTHLY'
+    startDate: Date;
+    lastExecuted: Date | null;
+    budgetId: string;
 }
