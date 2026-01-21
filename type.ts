@@ -27,3 +27,13 @@ export interface RecurringTransaction {
     lastExecuted: Date | null;
     budgetId: string;
 }
+
+export interface SavingsGoal {
+    id: string;
+    name: string;
+    targetAmount: number;
+    currentAmount: number;
+    deadline: Date | null;
+    userEmail: string;
+    createdAt: Date;
+}

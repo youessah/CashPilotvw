@@ -6,7 +6,6 @@ import { checkAndAddUser, syncRecurringTransactions } from "../actions";
 
 const Navbar = () => {
   const { isLoaded, isSignedIn, user } = useUser();
-
   const [theme, setTheme] = React.useState("cupcake");
 
   useEffect(() => {
@@ -29,7 +28,6 @@ const Navbar = () => {
     }
   }, [user])
 
-
   return (
     <div className="bg-base-200/30 px-5 md:px-[10%] py-4">
       {isLoaded &&
@@ -41,14 +39,17 @@ const Navbar = () => {
               </div>
 
               <div className="md:flex hidden items-center">
-                <Link href={"/budjets"} className="btn">
-                  Mes budjets
+                <Link href={"/budgets"} className="btn">
+                  Mes budgets
                 </Link>
                 <Link href={"/dashboard"} className="btn mx-4">
                   Tableau de bord
                 </Link>
                 <Link href={"/transactions"} className="btn mr-4">
                   Mes Transactions
+                </Link>
+                <Link href={"/savings"} className="btn mr-4">
+                  Mes Épargnes
                 </Link>
                 <button onClick={toggleTheme} className="btn btn-ghost btn-circle mr-2">
                   {theme === "cupcake" ? (
@@ -66,14 +67,17 @@ const Navbar = () => {
             </div>
 
             <div className="md:hidden flex mt-2 justify-center">
-              <Link href={"/budjets"} className="btn btn-sm">
-                Mes budjets
+              <Link href={"/budgets"} className="btn btn-sm">
+                Mes budgets
               </Link>
               <Link href={"/dashboard"} className="btn mx-4 btn-sm">
                 Tableau de bord
               </Link>
               <Link href={"/transactions"} className="btn btn-sm">
                 Mes Transactions
+              </Link>
+              <Link href={"/savings"} className="btn btn-sm ml-4">
+                Mes Épargnes
               </Link>
             </div>
           </>
@@ -87,7 +91,7 @@ const Navbar = () => {
                 Se connecter
               </Link>
               <Link href={"/sign-up"} className="btn mx-4 btn-sm btn-accent">
-                Sinscrire
+                S&apos;inscrire
               </Link>
 
             </div>

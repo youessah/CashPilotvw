@@ -246,11 +246,11 @@ export async function getTransactionsByEmailAndPeriod(email: string, period: str
             throw new Error('Utilisateur non trouvé.');
         }
 
-        const transactions = user.budgets.flatMap(budjet =>
-            budjet.transactions.map(transaction => ({
+        const transactions = user.budgets.flatMap(budget =>
+            budget.transactions.map(transaction => ({
                 ...transaction,
-                budgetName: budjet.name,
-                budgetId: budjet.id
+                budgetName: budget.name,
+                budgetId: budget.id
             }))
         )
 
@@ -335,10 +335,10 @@ export async function getReachedBudgets(email: string) {
         if (!user) throw new Error("Utilisateur non trouvé");
 
         const totalBudgets = user.budgets.length;
-        const reachedBudgets = user.budgets.filter(budjet => {
-            const totalTransactionsAmount = budjet.transactions.
+        const reachedBudgets = user.budgets.filter(budget => {
+            const totalTransactionsAmount = budget.transactions.
                 reduce((sum, transaction) => sum + transaction.amount, 0)
-            return totalTransactionsAmount >= budjet.amount
+            return totalTransactionsAmount >= budget.amount
         }).length
 
         return `${reachedBudgets}/${totalBudgets}`
@@ -521,5 +521,114 @@ export async function syncRecurringTransactions(email: string) {
     }
 }
 
+export async function addSavingsGoal(email: string, name: string, targetAmount: number, deadline: Date | null) {
+    try {
+        await prisma.savingsGoal.create({
+            data: {
+                name,
+                targetAmount,
+                deadline,
+                userEmail: email
+            }
+        })
+    } catch (error) {
+        console.error('Erreur lors de l\'ajout de l\'objectif d\'épargne:', error);
+        throw error
+    }
+}
+
+export async function getSavingsGoals(email: string) {
+    try {
+        const goals = await prisma.savingsGoal.findMany({
+            where: { userEmail: email },
+            orderBy: { createdAt: 'desc' }
+        })
+        return goals
+    } catch (error) {
+        console.error('Erreur lors de la récupération des objectifs d\'épargne:', error);
+        throw error
+    }
+}
+
+export async function updateSavingsGoalAmount(goalId: string, amount: number) {
+    try {
+        await prisma.savingsGoal.update({
+            where: { id: goalId },
+            data: {
+                currentAmount: {
+                    increment: amount
+                }
+            }
+        })
+    } catch (error) {
+        console.error('Erreur lors de la mise à jour de l\'objectif d\'épargne:', error);
+        throw error
+    }
+}
+
+export async function deleteSavingsGoal(goalId: string) {
+    try {
+        await prisma.savingsGoal.delete({
+            where: { id: goalId }
+        })
+    } catch (error) {
+        console.error('Erreur lors de la suppression de l\'objectif d\'épargne:', error);
+        throw error
+    }
+}
 
 
+
+
+
+export async function updateBudget(
+    budgetId: string,
+    name: string,
+    amount: number,
+    emoji: string
+) {
+    try {
+        await prisma.budget.update({
+            where: { id: budgetId },
+            data: {
+                name,
+                amount,
+                emoji
+            }
+        });
+    } catch (error) {
+        console.error('Erreur lors de la mise à jour du budget:', error);
+        throw error;
+    }
+}
+
+export async function updateTransaction(
+    transactionId: string,
+    amount: number,
+    description: string
+) {
+    try {
+        const transaction = await prisma.transaction.findUnique({
+            where: { id: transactionId },
+            include: { budget: true }
+        });
+
+        if (!transaction || !transaction.budget) {
+            throw new Error('Transaction ou budget introuvable');
+        }
+
+        // Optional: Check if new amount exceeds budget (logic depends on requirements, strict or lenient)
+        // For now, we allow update, but in a real app might want to re-check total.
+
+        await prisma.transaction.update({
+            where: { id: transactionId },
+            data: {
+                amount,
+                description
+            }
+        });
+    } catch (error) {
+        console.error('Erreur lors de la mise à jour de la transaction:', error);
+        throw error;
+    }
+}

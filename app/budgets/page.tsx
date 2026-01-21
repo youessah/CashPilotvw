@@ -103,7 +103,7 @@ const Page = () => {
               ✕
             </button>
           </form>
-          <h3 className="font-bold text-lg">Création d&apos;un budjets</h3>
+          <h3 className="font-bold text-lg">Création d&apos;un budget</h3>
           <p className="py-4">Permet de controler ces depenses facilement</p>
           <div className="w-full flex flex-col">
             <input
@@ -138,7 +138,7 @@ const Page = () => {
             )}
 
             <button onClick={handleAddBudget} className="btn">
-              Ajouter Budjet
+              Ajouter Budget
             </button>
           </div>
         </div>

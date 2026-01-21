@@ -49,3 +49,13 @@ model RecurringTransaction {
   budgetId     String
   budget       Budget     @relation(fields: [budgetId], references: [id])
 }
+
+model SavingsGoal {
+  id            String   @id @default(uuid())
+  name          String
+  targetAmount  Float
+  currentAmount Float    @default(0)
+  deadline      DateTime?
+  userEmail     String
+  createdAt     DateTime @default(now())
+}

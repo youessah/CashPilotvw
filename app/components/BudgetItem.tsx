@@ -3,10 +3,10 @@ import React from "react";
 
 interface BudgetItemProps {
     budget: Budget;
-    enableHover? : number;
+    enableHover?: number;
 }
 
-const BudgetItem: React.FC<BudgetItemProps> = ({ budget , enableHover}) => {
+const BudgetItem: React.FC<BudgetItemProps> = ({ budget, enableHover }) => {
     const transactionCount = budget.transactions ? budget.transactions.length : 0;
     const totalTransactionAmount = budget.transactions
         ? budget.transactions.reduce(
@@ -15,12 +15,12 @@ const BudgetItem: React.FC<BudgetItemProps> = ({ budget , enableHover}) => {
 
     const remainingAmount = budget.amount - totalTransactionAmount
 
-    const progressValue = 
-       totalTransactionAmount > budget.amount
-       ? 100
-       : (totalTransactionAmount /budget.amount) * 100
+    const progressValue =
+        totalTransactionAmount > budget.amount
+            ? 100
+            : (totalTransactionAmount / budget.amount) * 100
 
-    const hoverClasse = enableHover === 1 ? "hover:shadow-xl hover:border-accent" :"";
+    const hoverClasse = enableHover === 1 ? "hover:shadow-xl hover:border-accent" : "";
 
     return (
         <li key={budget.id} className={`p-4 rounded-xl border-2 border-base-300 list-none ${hoverClasse} `}>
@@ -44,7 +44,7 @@ const BudgetItem: React.FC<BudgetItemProps> = ({ budget , enableHover}) => {
             </div>
 
             <div>
-            <progress className="progress progress-accent w-full mt-4" value={progressValue} max="100"></progress>
+                <progress className="progress progress-accent w-full mt-4" value={progressValue} max="100"></progress>
             </div>
 
         </li>
