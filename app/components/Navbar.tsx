@@ -35,7 +35,7 @@ const Navbar = () => {
           <>
             <div className="flex justify-between items-center">
               <div className="flex text-2xl items-center font-bold">
-                find <span className="text-accent">.Track</span>
+                Find<span className="text-accent">Track</span>
               </div>
 
               <div className="md:flex hidden items-center">
@@ -84,7 +84,7 @@ const Navbar = () => {
         ) : (
           <div className="flex items-center justify-between">
             <div className="flex text-2xl items-center font-bold">
-              find <span className="text-accent">.Track</span>
+              Find<span className="text-accent">Track</span>
             </div>
             <div className=" flex mt-2 justify-center">
               <Link href={"/sign-in"} className="btn btn-sm">

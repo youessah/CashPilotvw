@@ -484,21 +484,28 @@ export async function syncRecurringTransactions(email: string) {
 
         for (const budget of budgets) {
             for (const recurring of budget.recurringTransactions) {
-                let shouldExecute = false;
-                const lastExec = recurring.lastExecuted || recurring.startDate;
-                const diffTime = Math.abs(now.getTime() - lastExec.getTime());
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const now = new Date(); // Date actuelle
+                let nextExecutionDate = new Date(recurring.lastExecuted || recurring.startDate);
 
-                if (recurring.frequency === 'DAILY' && diffDays >= 1) {
-                    shouldExecute = true;
-                } else if (recurring.frequency === 'WEEKLY' && diffDays >= 7) {
-                    shouldExecute = true;
-                } else if (recurring.frequency === 'MONTHLY' && diffDays >= 30) {
-                    shouldExecute = true;
-                }
+                // Fonction pour calculer la prochaine date d'exécution
+                const calculateNextDate = (date: Date, frequency: string) => {
+                    const nextDate = new Date(date);
+                    if (frequency === 'DAILY') {
+                        nextDate.setDate(nextDate.getDate() + 1);
+                    } else if (frequency === 'WEEKLY') {
+                        nextDate.setDate(nextDate.getDate() + 7);
+                    } else if (frequency === 'MONTHLY') {
+                        nextDate.setMonth(nextDate.getMonth() + 1);
+                    }
+                    return nextDate;
+                };
 
-                if (shouldExecute) {
-                    // Create the actual transaction
+                // Avancer à la première date d'exécution prévue
+                nextExecutionDate = calculateNextDate(nextExecutionDate, recurring.frequency);
+
+                // Boucle de rattrapage : Tant que la prochaine date est passée (<= now)
+                while (nextExecutionDate <= now) {
+                    // Créer la transaction
                     await prisma.transaction.create({
                         data: {
                             amount: recurring.amount,
@@ -508,16 +515,42 @@ export async function syncRecurringTransactions(email: string) {
                         }
                     });
 
-                    // Update last executed date
+                    // Mettre à jour la date de dernière exécution
                     await prisma.recurringTransaction.update({
                         where: { id: recurring.id },
-                        data: { lastExecuted: now }
+                        data: { lastExecuted: nextExecutionDate }
                     });
+
+                    // Calculer la prochaine date pour la suite de la boucle
+                    nextExecutionDate = calculateNextDate(nextExecutionDate, recurring.frequency);
                 }
             }
         }
     } catch (error) {
         console.error('Erreur lors de la synchronisation des transactions récurrentes:', error);
+    }
+}
+
+export async function getRecurringTransactionsByBudget(budgetId: string) {
+    try {
+        const transactions = await prisma.recurringTransaction.findMany({
+            where: { budgetId },
+        });
+        return transactions;
+    } catch (error) {
+        console.error('Erreur lors de la récupération des transactions récurrentes:', error);
+        throw error;
+    }
+}
+
+export async function deleteRecurringTransaction(transactionId: string) {
+    try {
+        await prisma.recurringTransaction.delete({
+            where: { id: transactionId },
+        });
+    } catch (error) {
+        console.error('Erreur lors de la suppression de la transaction récurrente:', error);
+        throw error;
     }
 }
 

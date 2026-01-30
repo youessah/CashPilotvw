@@ -1,13 +1,14 @@
 "use client"
-import { addRecurringTransaction, addTransactionToBudget, deleteBudget, deleteTransaction, getTrasactionsByBudgetId, updateBudget, updateTransaction } from '@/app/actions'
+import { addRecurringTransaction, addTransactionToBudget, deleteBudget, deleteTransaction, getRecurringTransactionsByBudget, getTrasactionsByBudgetId, updateBudget, updateTransaction } from '@/app/actions'
 import BudgetItem from '@/app/components/BudgetItem'
 import Wrapper from '@/app/components/Wrapper'
-import { Budget } from '@/type'
+import { Budget, RecurringTransaction } from '@/type'
 import React, { useCallback, useEffect, useState } from 'react'
 import Notification from '@/app/components/Notification'
 import { Send, Trash, Pencil } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import EmojiPicker from 'emoji-picker-react'
+import RecurringTransactionList from '@/app/components/RecurringTransactionList'
 
 const Page = ({ params }: { params: Promise<{ budgetId: string }> }) => {
   const [budgetId, setBudgetId] = useState<string>('')
@@ -16,6 +17,7 @@ const Page = ({ params }: { params: Promise<{ budgetId: string }> }) => {
   const [amount, setAmount] = useState<string>('')
   const [isRecurring, setIsRecurring] = useState<boolean>(false)
   const [frequency, setFrequency] = useState<string>('MONTHLY')
+  const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>([])
 
   const [notification, setNotification] = useState<string>("");
   const closeNotification = () => {
@@ -33,12 +35,15 @@ const Page = ({ params }: { params: Promise<{ budgetId: string }> }) => {
   const [editingTransactionId, setEditingTransactionId] = useState<string | null>(null)
   const [editTransactionDescription, setEditTransactionDescription] = useState('')
   const [editTransactionAmount, setEditTransactionAmount] = useState('')
+  const [editTransactionAmountString, setEditTransactionAmountString] = useState('')
 
   const fetchBudgetData = useCallback(async (budgetId: string) => {
     try {
       if (budgetId) {
         const budgetData = await getTrasactionsByBudgetId(budgetId)
+        const recurringData = await getRecurringTransactionsByBudget(budgetId)
         setBudget(budgetData)
+        setRecurringTransactions(recurringData)
         setEditBudgetName(budgetData?.name || '')
         setEditBudgetAmount(budgetData?.amount.toString() || '')
         setEditBudgetEmoji(budgetData?.emoji || '')
@@ -240,6 +245,17 @@ const Page = ({ params }: { params: Promise<{ budgetId: string }> }) => {
             </div>
           </div>
 
+
+
+          {/* Recurring Transactions Section */}
+          <RecurringTransactionList
+            transactions={recurringTransactions}
+            onDelete={async (id) => {
+              // Update local state is handled by parent refresh usually, but here we might want to refresh budget data
+              fetchBudgetData(budgetId);
+              setNotification("Récurrence supprimée avec succès");
+            }}
+          />
 
           {budget?.transactions && budget.transactions.length > 0 ? (
             <div className="overflow-x-auto md:mt-0 mt-4 md:w-2/3 ml-4 bg-base-100 rounded-xl shadow-sm border border-base-200">
