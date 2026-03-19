@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import Wrapper from "../components/Wrapper";
 import { useUser } from "@clerk/nextjs";
 import EmojiPicker from "emoji-picker-react";
-import { addBudget, getBudgetsByUser } from "../actions";
+import { addBudget, getBudgetsByUser, generateAutoBudgets } from "../actions";
 import Notification from "../components/Notification";
 import { Budget } from "@/type";
 import Link from "next/link";
@@ -16,7 +16,8 @@ const Page = () => {
   const [budgetAmount, setBudgetAmount] = useState<string>("");
   const [showEmojiPicker, setShowEmojiPicker] = useState<boolean>(false);
   const [selectedEmoji, setSelectedEmoji] = useState<string>("");
-  const [budgets, setBudgets] = useState<Budget[]>([])
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [totalIncome, setTotalIncome] = useState<string>("");
 
   const [notification, setNotification] = useState<string>("");
   const closeNotification = () => {
@@ -72,6 +73,23 @@ const Page = () => {
     }
   }, [user?.primaryEmailAddress?.emailAddress]);
 
+  const handleAutoGenerate = async () => {
+    try {
+      const amount = parseFloat(totalIncome);
+      if (isNaN(amount) || amount <= 0) {
+        throw new Error("Le revenu doit être un nombre positif.");
+      }
+      await generateAutoBudgets(user?.primaryEmailAddress?.emailAddress as string, amount);
+      fetchBudgets();
+      const modal = document.getElementById("auto_budget_modal") as HTMLDialogElement;
+      if (modal) modal.close();
+      setNotification('Budgets générés automatiquement avec succès !');
+      setTotalIncome("");
+    } catch (error) {
+      setNotification(`Erreur : ${error}`);
+    }
+  };
+
   useEffect(() => {
     fetchBudgets()
   }, [fetchBudgets])
@@ -84,17 +102,31 @@ const Page = () => {
         < Notification message={notification} onclose={closeNotification}></Notification>
       )}
 
-      <button
-        className="btn mb-4"
-        onClick={() =>
-          (
-            document.getElementById("my_modal_3") as HTMLDialogElement
-          ).showModal()
-        }
-      >
-        Nouveau Budget
-        <Landmark className="w-4" />
-      </button>
+      <div className="flex flex-col md:flex-row gap-4 mb-4">
+        <button
+          className="btn"
+          onClick={() =>
+            (
+              document.getElementById("my_modal_3") as HTMLDialogElement
+            ).showModal()
+          }
+        >
+          Nouveau Budget
+          <Landmark className="w-4" />
+        </button>
+
+        <button
+          className="btn btn-outline btn-accent"
+          onClick={() =>
+            (
+              document.getElementById("auto_budget_modal") as HTMLDialogElement
+            ).showModal()
+          }
+        >
+          Générer mon budget automatiquement (50/30/20)
+          <Landmark className="w-4" />
+        </button>
+      </div>
 
       <dialog id="my_modal_3" className="modal">
         <div className="modal-box">
@@ -139,6 +171,34 @@ const Page = () => {
 
             <button onClick={handleAddBudget} className="btn">
               Ajouter Budget
+            </button>
+          </div>
+        </div>
+      </dialog>
+
+      <dialog id="auto_budget_modal" className="modal">
+        <div className="modal-box">
+          <form method="dialog">
+            <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+              ✕
+            </button>
+          </form>
+          <h3 className="font-bold text-lg">Génération Automatique de Budget</h3>
+          <p className="py-4 text-sm text-gray-500">
+            Entrez votre revenu global mensuel. L&apos;application va répartir automatiquement vos finances avec la règle d&apos;or 50/30/20 (50% Besoins, 30% Envies, 20% Épargne).
+          </p>
+          <div className="w-full flex flex-col">
+            <input
+              type="number"
+              value={totalIncome}
+              placeholder="Revenu Mensuel (FCFA)"
+              onChange={(e) => setTotalIncome(e.target.value)}
+              className="input input-bordered mb-4"
+              required
+            />
+
+            <button onClick={handleAutoGenerate} className="btn btn-accent text-white font-bold">
+              Générer et Répartir instantanément !
             </button>
           </div>
         </div>

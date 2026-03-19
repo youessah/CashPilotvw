@@ -49,7 +49,7 @@ const SavingsPage = () => {
             setTargetAmount("");
             setDeadline("");
             fetchGoals();
-            (document.getElementById('add_goal_modal') as any)?.close();
+            (document.getElementById('add_goal_modal') as HTMLDialogElement)?.close();
         } catch (error) {
             console.error("Erreur lors de l'ajout de l'objectif:", error);
         }
@@ -66,7 +66,7 @@ const SavingsPage = () => {
                 </div>
                 <button
                     className="btn btn-accent"
-                    onClick={() => (document.getElementById('add_goal_modal') as any)?.showModal()}
+                    onClick={() => (document.getElementById('add_goal_modal') as HTMLDialogElement)?.showModal()}
                 >
                     <Plus size={20} /> Nouvel Objectif
                 </button>
@@ -83,7 +83,7 @@ const SavingsPage = () => {
                     <p className="text-gray-500 mb-6">Commencez par créer votre premier objectif d&apos;épargne !</p>
                     <button
                         className="btn btn-accent"
-                        onClick={() => (document.getElementById('add_goal_modal') as any)?.showModal()}
+                        onClick={() => (document.getElementById('add_goal_modal') as HTMLDialogElement)?.showModal()}
                     >
                         Créer mon premier objectif
                     </button>
@@ -139,7 +139,7 @@ const SavingsPage = () => {
                             />
                         </div>
                         <div className="modal-action">
-                            <button type="button" className="btn" onClick={() => (document.getElementById('add_goal_modal') as any)?.close()}>Annuler</button>
+                            <button type="button" className="btn" onClick={() => (document.getElementById('add_goal_modal') as HTMLDialogElement)?.close()}>Annuler</button>
                             <button type="submit" className="btn btn-accent">Créer l&apos;objectif</button>
                         </div>
                     </form>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Navbar from "./components/Navbar";
 import { useUser } from "@clerk/nextjs";
-import { ArrowRight, Wallet, TrendingUp, Shield, PieChart } from "lucide-react";
+import { ArrowRight, Wallet, TrendingUp, PieChart } from "lucide-react";
 
 export default function Home() {
   const { isSignedIn } = useUser();
@@ -36,7 +36,7 @@ export default function Home() {
 
             {/* Subtext - Cleaned up */}
             <p className="mt-8 text-xl leading-8 text-gray-300 max-w-2xl mx-auto font-light">
-              Une solution élégante et fluide pour suivre vos revenus et atteindre vos objectifs d'épargne.
+              Une solution élégante et fluide pour suivre vos revenus et atteindre vos objectifs d&apos;épargne.
             </p>
 
             {/* Buttons - Modern & Soft Glow */}

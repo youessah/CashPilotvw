@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Lightbulb, AlertTriangle, CheckCircle, Info, TrendingUp } from 'lucide-react';
+import { SavingsGoal } from '@/type';
 
 interface BudgetData {
     budgetName: string;
@@ -11,7 +12,7 @@ interface BudgetData {
 
 interface BudgetAdvisorProps {
     budgetData: BudgetData[];
-    savingsGoals: any[]; // Using any for now to avoid complexity, will cast inside
+    savingsGoals: SavingsGoal[];
 }
 
 const BudgetAdvisor: React.FC<BudgetAdvisorProps> = ({ budgetData, savingsGoals }) => {
@@ -112,7 +113,7 @@ const BudgetAdvisor: React.FC<BudgetAdvisorProps> = ({ budgetData, savingsGoals 
                         <div>
                             <h4 className="font-bold text-md mb-1">{advice.title}</h4>
                             <p className="text-sm opacity-70 leading-relaxed font-medium italic">
-                                "{advice.text}"
+                                &quot;{advice.text}&quot;
                             </p>
                         </div>
                     </div>

@@ -2,7 +2,7 @@
 import { addRecurringTransaction, addTransactionToBudget, deleteBudget, deleteTransaction, getRecurringTransactionsByBudget, getTrasactionsByBudgetId, updateBudget, updateTransaction } from '@/app/actions'
 import BudgetItem from '@/app/components/BudgetItem'
 import Wrapper from '@/app/components/Wrapper'
-import { Budget, RecurringTransaction } from '@/type'
+import { Budget, RecurringTransaction, Transaction } from '@/type'
 import React, { useCallback, useEffect, useState } from 'react'
 import Notification from '@/app/components/Notification'
 import { Send, Trash, Pencil } from 'lucide-react'
@@ -35,7 +35,6 @@ const Page = ({ params }: { params: Promise<{ budgetId: string }> }) => {
   const [editingTransactionId, setEditingTransactionId] = useState<string | null>(null)
   const [editTransactionDescription, setEditTransactionDescription] = useState('')
   const [editTransactionAmount, setEditTransactionAmount] = useState('')
-  const [editTransactionAmountString, setEditTransactionAmountString] = useState('')
 
   const fetchBudgetData = useCallback(async (budgetId: string) => {
     try {
@@ -139,11 +138,11 @@ const Page = ({ params }: { params: Promise<{ budgetId: string }> }) => {
   }
 
   // Update Transaction Logic
-  const openEditTransactionModal = (transaction: any) => {
+  const openEditTransactionModal = (transaction: Transaction) => {
     setEditingTransactionId(transaction.id);
     setEditTransactionDescription(transaction.description);
     setEditTransactionAmount(transaction.amount.toString());
-    (document.getElementById('edit_transaction_modal') as any)?.showModal();
+    (document.getElementById('edit_transaction_modal') as HTMLDialogElement)?.showModal();
   }
 
   const handleUpdateTransaction = async () => {
@@ -155,7 +154,7 @@ const Page = ({ params }: { params: Promise<{ budgetId: string }> }) => {
       await updateTransaction(editingTransactionId, amountNum, editTransactionDescription);
       setNotification("Transaction mise à jour");
       setEditingTransactionId(null);
-      (document.getElementById('edit_transaction_modal') as any)?.close();
+      (document.getElementById('edit_transaction_modal') as HTMLDialogElement)?.close();
       fetchBudgetData(budgetId);
     } catch (error) {
       setNotification("Erreur mise à jour transaction");
@@ -250,7 +249,7 @@ const Page = ({ params }: { params: Promise<{ budgetId: string }> }) => {
           {/* Recurring Transactions Section */}
           <RecurringTransactionList
             transactions={recurringTransactions}
-            onDelete={async (id) => {
+            onDelete={async () => {
               // Update local state is handled by parent refresh usually, but here we might want to refresh budget data
               fetchBudgetData(budgetId);
               setNotification("Récurrence supprimée avec succès");
@@ -366,7 +365,7 @@ const Page = ({ params }: { params: Promise<{ budgetId: string }> }) => {
             <input type="number" className="input input-bordered w-full" value={editTransactionAmount} onChange={e => setEditTransactionAmount(e.target.value)} />
           </div>
           <div className="modal-action">
-            <button className="btn" onClick={() => (document.getElementById('edit_transaction_modal') as any)?.close()}>Annuler</button>
+            <button className="btn" onClick={() => (document.getElementById('edit_transaction_modal') as HTMLDialogElement)?.close()}>Annuler</button>
             <button className="btn btn-primary" onClick={handleUpdateTransaction}>Sauvegarder</button>
           </div>
         </div>

@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Target, Plus, Trash2, TrendingUp } from 'lucide-react';
+import { Target, Trash2 } from 'lucide-react';
 import { SavingsGoal } from '@/type';
-import { addSavingsGoal, deleteSavingsGoal, updateSavingsGoalAmount } from '../actions';
+import { deleteSavingsGoal, updateSavingsGoalAmount } from '../actions';
 
 interface SavingsGoalItemProps {
     goal: SavingsGoal;

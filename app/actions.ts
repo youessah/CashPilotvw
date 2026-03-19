@@ -479,7 +479,6 @@ export async function syncRecurringTransactions(email: string) {
 
         if (!user) throw new Error("Utilisateur non trouvé");
 
-        const now = new Date();
         const budgets = user.budgets;
 
         for (const budget of budgets) {
@@ -663,5 +662,119 @@ export async function updateTransaction(
     } catch (error) {
         console.error('Erreur lors de la mise à jour de la transaction:', error);
         throw error;
+    }
+}
+
+export async function generateAutoBudgets(email: string, totalIncome: number) {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { email },
+            include: { budgets: true }
+        });
+
+        if (!user) throw new Error("Utilisateur introuvable");
+
+        const needsAmount = totalIncome * 0.50;
+        const wantsAmount = totalIncome * 0.30;
+        const savingsAmount = totalIncome * 0.20;
+
+        await prisma.budget.createMany({
+            data: [
+                { name: "Besoins (50%)", amount: needsAmount, emoji: "🏠", userId: user.id },
+                { name: "Envies (30%)", amount: wantsAmount, emoji: "🎬", userId: user.id },
+                { name: "Épargne (20%)", amount: savingsAmount, emoji: "💰", userId: user.id },
+            ]
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("Erreur lors de la génération automatique des budgets", error);
+        throw error;
+    }
+}
+
+export async function getSmartCategorization(email: string, description: string) {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { email },
+            include: { budgets: true }
+        });
+
+        if (!user || user.budgets.length === 0) return null;
+
+        const descLower = description.toLowerCase();
+
+        // Keywords mapping
+        const keywords: Record<string, string[]> = {
+            "Besoins": ["supermarché", "courses", "loyer", "facture", "électricité", "eau", "carrefour", "auchan", "pharmacie", "santé", "transport", "bus", "train", "essence", "alimentation"],
+            "Envies": ["restaurant", "cinéma", "sortie", "shopping", "vêtements", "netflix", "spotify", "loisir", "bar", "café", "fastfood", "glace"],
+            "Épargne": ["épargne", "investissement", "bourse", "crypto", "livret", "économie", "banque"]
+        };
+
+        // 1. Custom budget names check (direct match)
+        for (const budget of user.budgets) {
+            if (descLower.includes(budget.name.toLowerCase())) {
+                return budget;
+            }
+        }
+
+        // 2. Smart matching via keywords
+        for (const [category, words] of Object.entries(keywords)) {
+            if (words.some(word => descLower.includes(word))) {
+                // Find a budget that matches this category (e.g., "Besoins (50%)")
+                const matchedBudget = user.budgets.find(b => b.name.toLowerCase().includes(category.toLowerCase()));
+                if (matchedBudget) return matchedBudget;
+                // Otherwise try to find any budget that is likely a need
+                if (category === "Besoins") {
+                    const fallback = user.budgets.find(b => b.name.toLowerCase().includes("aliment") || b.name.toLowerCase().includes("course"));
+                    if (fallback) return fallback;
+                }
+            }
+        }
+
+        return user.budgets[0]; // fallback to first budget
+    } catch (error) {
+        console.error("Erreur lors de la catégorisation intelligente", error);
+        return null;
+    }
+}
+
+export async function getBudgetInsights(email: string) {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { email },
+            include: { budgets: { include: { transactions: true } } }
+        });
+
+        if (!user) throw new Error("Utilisateur introuvable");
+
+        let totalBudget = 0;
+        let totalSpent = 0;
+        const warnings: string[] = [];
+
+        user.budgets.forEach(budget => {
+            totalBudget += budget.amount;
+            const spent = budget.transactions.reduce((sum, t) => sum + t.amount, 0);
+            totalSpent += spent;
+
+            if (budget.amount > 0 && (spent / budget.amount) >= 0.9) {
+                warnings.push(budget.name);
+            }
+        });
+
+        const now = new Date();
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const remainingDays = daysInMonth - now.getDate() + 1; // including today
+
+        const remainingBudget = Math.max(0, totalBudget - totalSpent);
+        const dailyAllowance = remainingDays > 0 ? Math.floor(remainingBudget / remainingDays) : 0;
+
+        return {
+            dailyAllowance,
+            warnings
+        };
+    } catch (error) {
+        console.error("Erreur insights", error);
+        return { dailyAllowance: 0, warnings: [] };
     }
 }
