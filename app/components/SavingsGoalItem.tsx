@@ -105,35 +105,37 @@ const SavingsGoalItem: React.FC<SavingsGoalItemProps> = ({ goal, onUpdate }) => 
 
     return (
         <>
-            <div className="border-2 border-base-300 p-5 rounded-xl bg-base-100 shadow-sm flex flex-col gap-4">
+            <div className="border-2 border-base-300 p-4 md:p-5 rounded-xl bg-base-100 shadow-sm flex flex-col gap-4">
 
                 {/* En-tête */}
-                <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${isCompleted ? 'bg-success/15' : isLate ? 'bg-error/15' : 'bg-accent/10'}`}>
-                            <Target className={`w-6 h-6 ${isCompleted ? 'text-success' : isLate ? 'text-error' : 'text-accent'}`} />
+                <div className="flex flex-col md:flex-row justify-between items-start gap-4 md:gap-0">
+                    <div className="flex items-center gap-3 w-full md:w-auto overflow-hidden">
+                        <div className={`p-2 rounded-lg flex-shrink-0 ${isCompleted ? 'bg-success/15' : isLate ? 'bg-error/15' : 'bg-accent/10'}`}>
+                            <Target className={`w-5 h-5 md:w-6 md:h-6 ${isCompleted ? 'text-success' : isLate ? 'text-error' : 'text-accent'}`} />
                         </div>
-                        <div>
-                            <h3 className="text-lg font-bold leading-tight">{goal.name}</h3>
-                            <p className="text-sm text-gray-500">
+                        <div className="min-w-0 flex-1">
+                            <h3 className="text-base md:text-lg font-bold leading-tight truncate" title={goal.name}>{goal.name}</h3>
+                            <p className="text-xs md:text-sm text-gray-500 truncate" title={`${goal.targetAmount.toLocaleString('fr-FR')} FCFA`}>
                                 Cible : <span className="font-semibold">{goal.targetAmount.toLocaleString('fr-FR')} FCFA</span>
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 w-full md:w-auto justify-between md:justify-end">
                         {getStatusBadge()}
-                        <button onClick={() => setIsEditOpen(true)} className="btn btn-ghost btn-sm text-info">
-                            <Pencil size={16} />
-                        </button>
-                        <button onClick={handleDelete} className="btn btn-ghost btn-sm text-error">
-                            <Trash2 size={16} />
-                        </button>
+                        <div className="flex">
+                            <button onClick={() => setIsEditOpen(true)} className="btn btn-ghost btn-sm text-info px-2">
+                                <Pencil size={16} />
+                            </button>
+                            <button onClick={handleDelete} className="btn btn-ghost btn-sm text-error px-2">
+                                <Trash2 size={16} />
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 {/* Barre de progression */}
-                <div>
-                    <div className="flex justify-between text-sm mb-1">
+                <div className="w-full">
+                    <div className="flex justify-between text-sm mb-1 flex-wrap gap-2">
                         <span className="font-medium">{Math.round(percentage)}% atteint</span>
                         {goal.deadline && (
                             <span className={`text-xs ${isLate ? 'text-error font-semibold' : 'text-gray-400'}`}>
@@ -150,7 +152,7 @@ const SavingsGoalItem: React.FC<SavingsGoalItemProps> = ({ goal, onUpdate }) => 
                         value={percentage}
                         max="100"
                     />
-                    <div className="flex justify-between text-xs mt-1 text-gray-500">
+                    <div className="flex justify-between text-[10px] md:text-xs mt-1 text-gray-500 flex-wrap gap-x-4 gap-y-1">
                         <span>{goal.currentAmount.toLocaleString('fr-FR')} FCFA épargnés</span>
                         <span>Reste : {remaining.toLocaleString('fr-FR')} FCFA</span>
                     </div>
@@ -158,15 +160,15 @@ const SavingsGoalItem: React.FC<SavingsGoalItemProps> = ({ goal, onUpdate }) => 
 
                 {/* Ajout de fonds (désactivé si objectif atteint) */}
                 {!isCompleted && (
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 w-full mt-2">
                         <input
                             type="number"
-                            placeholder="Montant à épargner..."
-                            className="input input-bordered input-sm flex-1"
+                            placeholder="Montant..."
+                            className="input input-bordered input-sm flex-1 min-w-0"
                             value={amountToAdd}
                             onChange={(e) => setAmountToAdd(e.target.value)}
                         />
-                        <button onClick={handleAddFunds} className="btn btn-accent btn-sm font-semibold">
+                        <button onClick={handleAddFunds} className="btn btn-accent btn-sm font-semibold flex-shrink-0">
                             + Épargner
                         </button>
                     </div>

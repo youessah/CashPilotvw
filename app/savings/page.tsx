@@ -82,13 +82,13 @@ const SavingsPage = () => {
             {/* En-tête */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold flex items-center gap-2">
-                        <Target className="text-accent" /> Mes Objectifs d&apos;Épargne
+                    <h1 className="text-3xl font-bold flex items-center gap-2 flex-wrap">
+                        <Target className="text-accent flex-shrink-0" /> Mes Objectifs d&apos;Épargne
                     </h1>
                     <p className="text-gray-500 mt-1">Suivez et atteignez vos projets financiers.</p>
                 </div>
                 <button
-                    className="btn btn-accent"
+                    className="btn btn-accent w-full md:w-auto"
                     onClick={() => (document.getElementById('add_goal_modal') as HTMLDialogElement)?.showModal()}
                 >
                     <Plus size={20} /> Nouvel Objectif
@@ -97,39 +97,39 @@ const SavingsPage = () => {
 
             {/* Résumé global */}
             {goals.length > 0 && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div className="border-2 border-base-300 p-4 rounded-xl flex flex-col gap-1">
-                        <span className="text-xs text-gray-500 uppercase tracking-wide">Total épargné</span>
-                        <span className="text-xl font-bold text-accent">{totalSaved.toLocaleString('fr-FR')} FCFA</span>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+                    <div className="border-2 border-base-300 p-3 md:p-4 rounded-xl flex flex-col gap-1 overflow-hidden">
+                        <span className="text-[10px] md:text-xs text-gray-500 uppercase tracking-wide truncate">Total épargné</span>
+                        <span className="text-lg md:text-xl font-bold text-accent truncate" title={`${totalSaved.toLocaleString('fr-FR')} FCFA`}>{totalSaved.toLocaleString('fr-FR')} <span className="text-sm">FCFA</span></span>
                     </div>
-                    <div className="border-2 border-base-300 p-4 rounded-xl flex flex-col gap-1">
-                        <span className="text-xs text-gray-500 uppercase tracking-wide">Total ciblé</span>
-                        <span className="text-xl font-bold">{totalTarget.toLocaleString('fr-FR')} FCFA</span>
+                    <div className="border-2 border-base-300 p-3 md:p-4 rounded-xl flex flex-col gap-1 overflow-hidden">
+                        <span className="text-[10px] md:text-xs text-gray-500 uppercase tracking-wide truncate">Total ciblé</span>
+                        <span className="text-lg md:text-xl font-bold truncate" title={`${totalTarget.toLocaleString('fr-FR')} FCFA`}>{totalTarget.toLocaleString('fr-FR')} <span className="text-sm">FCFA</span></span>
                     </div>
-                    <div className="border-2 border-base-300 p-4 rounded-xl flex flex-col gap-1">
-                        <span className="text-xs text-gray-500 uppercase tracking-wide">Objectifs atteints</span>
-                        <span className="text-xl font-bold text-success flex items-center gap-1">
-                            <Trophy className="w-5 h-5" /> {completedCount} / {goals.length}
+                    <div className="border-2 border-base-300 p-3 md:p-4 rounded-xl flex flex-col gap-1 overflow-hidden">
+                        <span className="text-[10px] md:text-xs text-gray-500 uppercase tracking-wide truncate">Atteints</span>
+                        <span className="text-lg md:text-xl font-bold text-success flex items-center gap-1">
+                            <Trophy className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" /> {completedCount} / {goals.length}
                         </span>
                     </div>
-                    <div className="border-2 border-base-300 p-4 rounded-xl flex flex-col gap-1">
-                        <span className="text-xs text-gray-500 uppercase tracking-wide">En retard</span>
-                        <span className={`text-xl font-bold ${lateCount > 0 ? 'text-error' : 'text-success'}`}>
+                    <div className="border-2 border-base-300 p-3 md:p-4 rounded-xl flex flex-col gap-1 overflow-hidden">
+                        <span className="text-[10px] md:text-xs text-gray-500 uppercase tracking-wide truncate">En retard</span>
+                        <span className={`text-lg md:text-xl font-bold ${lateCount > 0 ? 'text-error' : 'text-success'}`}>
                             {lateCount > 0 ? `⚠️ ${lateCount}` : '✅ 0'}
                         </span>
                     </div>
 
                     {/* Barre globale sur toute la largeur */}
                     <div className="col-span-2 md:col-span-4 border-2 border-base-300 p-4 rounded-xl">
-                        <div className="flex justify-between text-sm mb-2">
+                        <div className="flex justify-between text-sm mb-2 flex-wrap gap-2">
                             <span className="font-semibold flex items-center gap-1">
-                                <PiggyBank className="w-4 h-4 text-accent" /> Progression globale
+                                <PiggyBank className="w-4 h-4 text-accent flex-shrink-0" /> Progression globale
                             </span>
                             <span className="font-bold text-accent">{Math.round(globalPct)}%</span>
                         </div>
                         <progress className="progress progress-accent w-full h-4" value={globalPct} max="100" />
-                        <p className="text-xs text-gray-400 mt-1">
-                            {totalSaved.toLocaleString('fr-FR')} FCFA épargnés sur {totalTarget.toLocaleString('fr-FR')} FCFA au total
+                        <p className="text-[10px] md:text-xs text-gray-400 mt-1 break-words">
+                            {totalSaved.toLocaleString('fr-FR')} FCFA épargnés sur {totalTarget.toLocaleString('fr-FR')} FCFA
                         </p>
                     </div>
                 </div>
@@ -138,10 +138,11 @@ const SavingsPage = () => {
             {/* Tri */}
             {goals.length > 1 && (
                 <div className="flex justify-end mb-4">
-                    <div className="flex items-center gap-2">
-                        <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                    <div className="flex items-center gap-2 w-full md:w-auto">
+                        <ArrowUpDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         <select
-                            className="select select-bordered select-sm"
+                            className="select select-bordered select-sm w-full md:w-auto text-xs md:text-sm"
+
                             value={sortBy}
                             onChange={e => setSortBy(e.target.value as SortOption)}
                         >
