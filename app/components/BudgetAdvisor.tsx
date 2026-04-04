@@ -78,19 +78,41 @@ const BudgetAdvisor: React.FC<BudgetAdvisorProps> = ({ budgetData, savingsGoals 
 
         // General financial tips if not many alerts
         if (adviceList.length < 3) {
+            // Compute current savings ratio from budgets
+            const savingBudget = budgetData.find(b =>
+                b.budgetName.toLowerCase().includes("épargne") || b.budgetName.toLowerCase().includes("saving")
+            );
+            const totalBudget = budgetData.reduce((s, b) => s + b.totalBudgetAmount, 0);
+            const savingsRatio = savingBudget && totalBudget > 0
+                ? savingBudget.totalBudgetAmount / totalBudget
+                : null;
+
+            let methodAdvice: string;
+            if (savingsRatio === null) {
+                methodAdvice = "Essayez la génération automatique de budget ! Choisissez la méthode adaptée à votre profil : 50/30/20 (standard), 70/20/10 (charges élevées), 60/20/20 (focus épargne) ou définissez votre propre répartition.";
+            } else if (savingsRatio < 0.10) {
+                methodAdvice = "Votre taux d'épargne actuel est faible (<10%). La méthode 70/20/10 peut vous aider à mieux gérer les priorités essentielles tout en conservant une épargne minimale.";
+            } else if (savingsRatio >= 0.20) {
+                methodAdvice = "Excellent ! Votre allocation épargne est élevée (≥20%). Continuez sur cette lancée, vous pouvez explorer la méthode 60/20/20 pour équilibrer besoins et épargne.";
+            } else {
+                methodAdvice = "Votre répartition actuelle est correcte. La méthode 50/30/20 vous convient bien. Si vos besoins évoluent, essayez le mode personnalisé pour ajuster librement vos pourcentages.";
+            }
+
+            adviceList.push({
+                icon: <Lightbulb className="text-amber-500" />,
+                title: "Conseil Méthode Budgétaire",
+                text: methodAdvice,
+                type: 'info'
+            });
+
             adviceList.push({
                 icon: <Lightbulb className="text-amber-500" />,
                 title: "Conseil Épargne",
-                text: "Essayez d'épargner au moins 20% de vos revenus chaque mois pour construire un fonds d'urgence.",
-                type: 'info'
-            });
-            adviceList.push({
-                icon: <Lightbulb className="text-amber-500" />,
-                title: "Règle 50/30/20",
-                text: "Considérez la règle 50% pour les besoins, 30% pour les envies et 20% pour l'épargne.",
+                text: "Visez à épargner au moins 10% de vos revenus chaque mois pour constituer un fonds d'urgence, même si c'est difficile au départ.",
                 type: 'info'
             });
         }
+
 
         return adviceList.slice(0, 4); // Show top 4 advices
     };

@@ -6,6 +6,30 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { getBudgetsByUser, getTransactionsByEmailAndPeriod } from '../actions'
 import Wrapper from '../components/Wrapper'
 import TransactionItem from '../components/TransactionItem'
+import { Download } from 'lucide-react'
+
+// Utility: export transactions to CSV
+const exportToCSV = (transactions: Transaction[]) => {
+  if (transactions.length === 0) return;
+
+  const headers = ['Description', 'Montant (FCFA)', 'Budget', 'Date', 'Heure'];
+  const rows = transactions.map(t => [
+    `"${t.description.replace(/"/g, '""')}"`,
+    t.amount,
+    `"${(t.budgetName || 'N/A').replace(/"/g, '""')}"`,
+    new Date(t.createdAt).toLocaleDateString('fr-FR'),
+    new Date(t.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+  ]);
+
+  const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `transactions_${new Date().toLocaleDateString('fr-FR').replace(/\//g, '-')}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+};
 
 const Page = () => {
 
@@ -23,14 +47,12 @@ const Page = () => {
         const email = user.primaryEmailAddress.emailAddress
         const transactionsData = await getTransactionsByEmailAndPeriod(email, period)
         setTransactions(transactionsData)
-
-        // Also fetch budgets for the filter if not already fetched
         const userBudgets = await getBudgetsByUser(email)
         setBudgets(userBudgets.map((b: Budget) => ({ id: b.id, name: b.name })))
-
         setLoading(false)
       } catch (err) {
         console.error("Erreur lors de la récupération des transactions: ", err);
+        setLoading(false)
       }
     }
   }, [user?.primaryEmailAddress?.emailAddress]);
@@ -49,7 +71,8 @@ const Page = () => {
     <Wrapper>
 
       <div className='flex flex-col md:flex-row justify-between items-center mb-5 gap-4'>
-        <div className='flex gap-2 w-full md:w-auto'>
+        {/* Filtres */}
+        <div className='flex gap-2 w-full md:w-auto flex-wrap'>
           <input
             type="text"
             placeholder="Rechercher une transaction..."
@@ -69,18 +92,37 @@ const Page = () => {
           </select>
         </div>
 
-        <select
-          className='select select-bordered w-full md:w-auto'
-          defaultValue="last30"
-          onChange={(e) => fetchTransactions(e.target.value)}
-        >
-          <option value="last7">Derniers 7 jours</option>
-          <option value="last30">Derniers 30 jours</option>
-          <option value="last90">Derniers 90 jours</option>
-          <option value="last365">Derniers 365 jours</option>
-        </select>
+        <div className='flex gap-2 w-full md:w-auto'>
+          <select
+            className='select select-bordered flex-1 md:flex-none'
+            defaultValue="last30"
+            onChange={(e) => fetchTransactions(e.target.value)}
+          >
+            <option value="last7">Derniers 7 jours</option>
+            <option value="last30">Derniers 30 jours</option>
+            <option value="last90">Derniers 90 jours</option>
+            <option value="last365">Derniers 365 jours</option>
+          </select>
+
+          {/* Bouton Export CSV */}
+          <button
+            className='btn btn-outline btn-accent gap-2'
+            onClick={() => exportToCSV(filteredTransactions)}
+            disabled={filteredTransactions.length === 0}
+            title="Exporter les transactions filtrées en CSV"
+          >
+            <Download className='w-4 h-4' />
+            <span className='hidden md:inline'>Exporter CSV</span>
+          </button>
+        </div>
       </div>
 
+      {/* Compteur */}
+      {!loading && (
+        <p className='text-sm text-gray-500 mb-3'>
+          {filteredTransactions.length} transaction{filteredTransactions.length > 1 ? 's' : ''} affichée{filteredTransactions.length > 1 ? 's' : ''}
+        </p>
+      )}
 
       <div className='overflow-x-auto w-full bg-base-200/35 p-5 rounded-xl'>
         {loading ? (

@@ -609,6 +609,23 @@ export async function deleteSavingsGoal(goalId: string) {
     }
 }
 
+export async function updateSavingsGoal(
+    goalId: string,
+    name: string,
+    targetAmount: number,
+    deadline: Date | null
+) {
+    try {
+        await prisma.savingsGoal.update({
+            where: { id: goalId },
+            data: { name, targetAmount, deadline }
+        })
+    } catch (error) {
+        console.error('Erreur lors de la mise à jour de l\'objectif d\'épargne:', error);
+        throw error
+    }
+}
+
 
 
 
@@ -665,7 +682,26 @@ export async function updateTransaction(
     }
 }
 
-export async function generateAutoBudgets(email: string, totalIncome: number) {
+export type BudgetMethod = '50/30/20' | '70/20/10' | '60/20/20' | 'custom';
+
+export interface GenerateBudgetOptions {
+    method: BudgetMethod;
+    needsPct?: number;   // pour mode custom, en %
+    wantsPct?: number;
+    savingsPct?: number;
+}
+
+const METHOD_PRESETS: Record<Exclude<BudgetMethod, 'custom'>, { needs: number; wants: number; savings: number; needsLabel: string; wantsLabel: string; savingsLabel: string }> = {
+    '50/30/20': { needs: 0.50, wants: 0.30, savings: 0.20, needsLabel: "Besoins (50%)", wantsLabel: "Envies (30%)", savingsLabel: "Épargne (20%)" },
+    '70/20/10': { needs: 0.70, wants: 0.20, savings: 0.10, needsLabel: "Besoins (70%)", wantsLabel: "Envies (20%)", savingsLabel: "Épargne (10%)" },
+    '60/20/20': { needs: 0.60, wants: 0.20, savings: 0.20, needsLabel: "Besoins (60%)", wantsLabel: "Envies (20%)", savingsLabel: "Épargne (20%)" },
+};
+
+export async function generateAutoBudgets(
+    email: string,
+    totalIncome: number,
+    options: GenerateBudgetOptions = { method: '50/30/20' }
+) {
     try {
         const user = await prisma.user.findUnique({
             where: { email },
@@ -674,15 +710,51 @@ export async function generateAutoBudgets(email: string, totalIncome: number) {
 
         if (!user) throw new Error("Utilisateur introuvable");
 
-        const needsAmount = totalIncome * 0.50;
-        const wantsAmount = totalIncome * 0.30;
-        const savingsAmount = totalIncome * 0.20;
+        // Anti-doublon : vérifier si des budgets auto existent déjà
+        const existingAutoNames = ['besoins', 'envies', 'épargne', 'epargne', 'saving'];
+        const hasDuplicate = user.budgets.some(b =>
+            existingAutoNames.some(keyword => b.name.toLowerCase().includes(keyword))
+        );
+        if (hasDuplicate) {
+            throw new Error(
+                "Vous avez déjà des budgets générés automatiquement (Besoins, Envies, Épargne). Supprimez-les d'abord avant d'en générer de nouveaux."
+            );
+        }
+
+        let needsAmount: number;
+        let wantsAmount: number;
+        let savingsAmount: number;
+        let needsLabel: string;
+        let wantsLabel: string;
+        let savingsLabel: string;
+
+        if (options.method === 'custom') {
+            const np = (options.needsPct ?? 0) / 100;
+            const wp = (options.wantsPct ?? 0) / 100;
+            const sp = (options.savingsPct ?? 0) / 100;
+            const total = np + wp + sp;
+            if (Math.abs(total - 1) > 0.001) throw new Error("Les pourcentages doivent totaliser 100%.");
+            needsAmount = totalIncome * np;
+            wantsAmount = totalIncome * wp;
+            savingsAmount = totalIncome * sp;
+            needsLabel = `Besoins (${options.needsPct}%)`;
+            wantsLabel = `Envies (${options.wantsPct}%)`;
+            savingsLabel = `Épargne (${options.savingsPct}%)`;
+        } else {
+            const preset = METHOD_PRESETS[options.method];
+            needsAmount = totalIncome * preset.needs;
+            wantsAmount = totalIncome * preset.wants;
+            savingsAmount = totalIncome * preset.savings;
+            needsLabel = preset.needsLabel;
+            wantsLabel = preset.wantsLabel;
+            savingsLabel = preset.savingsLabel;
+        }
 
         await prisma.budget.createMany({
             data: [
-                { name: "Besoins (50%)", amount: needsAmount, emoji: "🏠", userId: user.id },
-                { name: "Envies (30%)", amount: wantsAmount, emoji: "🎬", userId: user.id },
-                { name: "Épargne (20%)", amount: savingsAmount, emoji: "💰", userId: user.id },
+                { name: needsLabel, amount: needsAmount, emoji: "🏠", userId: user.id },
+                { name: wantsLabel, amount: wantsAmount, emoji: "🎬", userId: user.id },
+                { name: savingsLabel, amount: savingsAmount, emoji: "💰", userId: user.id },
             ]
         });
 
