@@ -34,6 +34,7 @@ export interface SavingsGoal {
     targetAmount: number;
     currentAmount: number;
     deadline: Date | null;
+    emoji: string | null;
     userEmail: string;
     createdAt: Date;
 }

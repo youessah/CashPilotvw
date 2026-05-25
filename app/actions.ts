@@ -2,6 +2,56 @@
 
 import prisma from "@/lib/prisma";
 
+/**
+ * Suggère un emoji basé sur le nom de l'objectif (logique locale)
+ */
+function suggestEmoji(name: string): string {
+    const nameLower = name.toLowerCase();
+    const mapping: Record<string, string> = {
+        "vacances": "🏖️",
+        "voyage": "✈️",
+        "voiture": "🚗",
+        "maison": "🏠",
+        "appartement": "🏢",
+        "urgence": "🚨",
+        "secours": "🛡️",
+        "ordinateur": "💻",
+        "pc": "🖥️",
+        "téléphone": "📱",
+        "iphone": "📱",
+        "moto": "🏍️",
+        "vélo": "🚲",
+        "cadeau": "🎁",
+        "anniversaire": "🎂",
+        "mariage": "💍",
+        "fête": "🥳",
+        "santé": "🏥",
+        "sport": "⚽",
+        "études": "📚",
+        "école": "🏫",
+        "retraite": "🌴",
+        "investissement": "📈",
+        "bourse": "📊",
+        "crypto": "🪙",
+        "ordinateur portable": "💻",
+        "travaux": "🛠️",
+        "meuble": "🛋️",
+        "cuisine": "🍳",
+        "vision": "🕶️",
+        "jeux": "🎮",
+        "gaming": "🕹️",
+        "animal": "🐶",
+        "chien": "🐕",
+        "chat": "🐈"
+    };
+
+    for (const [key, emoji] of Object.entries(mapping)) {
+        if (nameLower.includes(key)) return emoji;
+    }
+
+    return "💰"; // Emoji par défaut
+}
+
 
 export async function checkAndAddUser(email: string | undefined) {
     if (!email) return
@@ -155,10 +205,17 @@ export async function addTransactionToBudget(
 
 export const deleteBudget = async (budgetId: string) => {
     try {
+        // Supprimer toutes les transactions associées
         await prisma.transaction.deleteMany({
             where: { budgetId }
         })
 
+        // Supprimer toutes les transactions récurrentes associées
+        await prisma.recurringTransaction.deleteMany({
+            where: { budgetId }
+        })
+
+        // Enfin, supprimer le budget
         await prisma.budget.delete({
             where: {
                 id: budgetId
@@ -555,11 +612,13 @@ export async function deleteRecurringTransaction(transactionId: string) {
 
 export async function addSavingsGoal(email: string, name: string, targetAmount: number, deadline: Date | null) {
     try {
+        const emoji = suggestEmoji(name);
         await prisma.savingsGoal.create({
             data: {
                 name,
                 targetAmount,
                 deadline,
+                emoji,
                 userEmail: email
             }
         })
@@ -616,9 +675,10 @@ export async function updateSavingsGoal(
     deadline: Date | null
 ) {
     try {
+        const emoji = suggestEmoji(name);
         await prisma.savingsGoal.update({
             where: { id: goalId },
-            data: { name, targetAmount, deadline }
+            data: { name, targetAmount, deadline, emoji }
         })
     } catch (error) {
         console.error('Erreur lors de la mise à jour de l\'objectif d\'épargne:', error);

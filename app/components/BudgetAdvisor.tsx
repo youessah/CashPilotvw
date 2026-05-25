@@ -1,8 +1,9 @@
 "use client";
 
 import React from 'react';
-import { Lightbulb, AlertTriangle, CheckCircle, Info, TrendingUp } from 'lucide-react';
 import { SavingsGoal } from '@/type';
+import { suggestBudgetTransfer } from '@/lib/savingsIntelligence';
+import { Lightbulb, AlertTriangle, CheckCircle, Info, TrendingUp, Zap } from 'lucide-react';
 
 interface BudgetData {
     budgetName: string;
@@ -109,6 +110,22 @@ const BudgetAdvisor: React.FC<BudgetAdvisorProps> = ({ budgetData, savingsGoals 
                 icon: <Lightbulb className="text-amber-500" />,
                 title: "Conseil Épargne",
                 text: "Visez à épargner au moins 10% de vos revenus chaque mois pour constituer un fonds d'urgence, même si c'est difficile au départ.",
+                type: 'info'
+            });
+        }
+
+        // Proactive Transfer Suggestion (Logical Intelligence)
+        const simplifiedBudgets = budgetData.map(b => ({
+            name: b.budgetName,
+            remaining: b.totalBudgetAmount - b.totalTransactionsAmount
+        }));
+        const transferTip = suggestBudgetTransfer(simplifiedBudgets);
+        
+        if (transferTip) {
+            adviceList.unshift({ // Add to top as it is high value advice
+                icon: <Zap className="text-yellow-400 w-5 h-5" fill="currentColor" />,
+                title: "Optimisation Épargne ⚡",
+                text: transferTip.message,
                 type: 'info'
             });
         }

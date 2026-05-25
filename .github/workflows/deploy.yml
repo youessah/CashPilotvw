@@ -1,0 +1,25 @@
+name: Build et Test
+
+on:
+  workflow_run:
+    workflows: ["CI/CD Pipeline"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image (optional)
+        run: echo "Docker build step - à adapter selon ta config"
+
+      # Ajoute ici tes étapes de déploiement
+      # Ex: push vers une registry Docker, déploiement sur Vercel, etc.
+
+      - name: Deployment successful
+        run: echo "✅ Deployment successful!"

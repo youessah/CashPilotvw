@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Target, Trash2, Pencil, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { Trash2, Pencil, CheckCircle2, Clock, AlertTriangle, Lightbulb, Zap } from 'lucide-react';
 import { SavingsGoal } from '@/type';
 import { deleteSavingsGoal, updateSavingsGoalAmount, updateSavingsGoal } from '../actions';
+import { calculateMonthlyEffort, getProactiveStatus } from '@/lib/savingsIntelligence';
 
 interface SavingsGoalItemProps {
     goal: SavingsGoal;
@@ -22,6 +23,9 @@ const SavingsGoalItem: React.FC<SavingsGoalItemProps> = ({ goal, onUpdate }) => 
 
     const percentage = Math.min((goal.currentAmount / goal.targetAmount) * 100, 100);
     const remaining = Math.max(goal.targetAmount - goal.currentAmount, 0);
+
+    const monthlyNeeded = calculateMonthlyEffort(goal);
+    const { status: pStatus, message: pMessage } = getProactiveStatus(goal);
 
     // Statut de l'objectif
     const isCompleted = goal.currentAmount >= goal.targetAmount;
@@ -56,6 +60,7 @@ const SavingsGoalItem: React.FC<SavingsGoalItemProps> = ({ goal, onUpdate }) => 
     const getProgressColor = () => {
         if (isCompleted) return "progress-success";
         if (isLate) return "progress-error";
+        if (pStatus === 'critical') return "progress-error";
         if (percentage >= 75) return "progress-warning";
         return "progress-accent";
     };
@@ -105,77 +110,107 @@ const SavingsGoalItem: React.FC<SavingsGoalItemProps> = ({ goal, onUpdate }) => 
 
     return (
         <>
-            <div className="border-2 border-base-300 p-4 md:p-5 rounded-xl bg-base-100 shadow-sm flex flex-col gap-4">
+            <div className={`relative overflow-hidden border-2 border-base-300 p-4 md:p-6 rounded-2xl bg-base-100 shadow-lg flex flex-col gap-5 transition-all hover:shadow-xl hover:border-accent/40 ${isCompleted ? 'bg-gradient-to-br from-success/5 to-transparent' : ''}`}>
+                
+                {/* Background Pattern for Modern Look */}
+                <div className="absolute -top-10 -right-10 w-32 h-32 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
 
                 {/* En-tête */}
-                <div className="flex flex-col md:flex-row justify-between items-start gap-4 md:gap-0">
-                    <div className="flex items-center gap-3 w-full md:w-auto overflow-hidden">
-                        <div className={`p-2 rounded-lg flex-shrink-0 ${isCompleted ? 'bg-success/15' : isLate ? 'bg-error/15' : 'bg-accent/10'}`}>
-                            <Target className={`w-5 h-5 md:w-6 md:h-6 ${isCompleted ? 'text-success' : isLate ? 'text-error' : 'text-accent'}`} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <h3 className="text-base md:text-lg font-bold leading-tight truncate" title={goal.name}>{goal.name}</h3>
-                            <p className="text-xs md:text-sm text-gray-500 truncate" title={`${goal.targetAmount.toLocaleString('fr-FR')} FCFA`}>
-                                Cible : <span className="font-semibold">{goal.targetAmount.toLocaleString('fr-FR')} FCFA</span>
-                            </p>
-                        </div>
+                <div className="flex items-start gap-4 relative z-10 w-full">
+                    <div className={`text-2xl md:text-3xl p-3 md:p-4 rounded-2xl flex-shrink-0 flex items-center justify-center shadow-inner ${isCompleted ? 'bg-success/20' : isLate ? 'bg-error/20' : 'bg-accent/10'}`}>
+                        {goal.emoji || "💰"}
                     </div>
-                    <div className="flex items-center gap-1 w-full md:w-auto justify-between md:justify-end">
-                        {getStatusBadge()}
-                        <div className="flex">
-                            <button onClick={() => setIsEditOpen(true)} className="btn btn-ghost btn-sm text-info px-2">
-                                <Pencil size={16} />
-                            </button>
-                            <button onClick={handleDelete} className="btn btn-ghost btn-sm text-error px-2">
-                                <Trash2 size={16} />
-                            </button>
+                    <div className="min-w-0 flex-1 flex flex-col gap-1">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h3 className="text-lg md:text-xl font-black leading-tight truncate text-base-content uppercase tracking-tight flex-1" title={goal.name}>
+                                {goal.name}
+                            </h3>
+                            <div className="flex items-center gap-2 shrink-0">
+                                {getStatusBadge()}
+                                <div className="flex bg-base-200/50 rounded-lg p-0.5 shadow-sm">
+                                    <button onClick={() => setIsEditOpen(true)} className="btn btn-ghost btn-xs text-info px-1.5 hover:bg-info/10">
+                                        <Pencil size={14} />
+                                    </button>
+                                    <button onClick={handleDelete} className="btn btn-ghost btn-xs text-error px-1.5 hover:bg-error/10">
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-1 mt-1">
+                            <p className="text-sm md:text-base text-gray-500 whitespace-nowrap">
+                                Cible : <span className="font-bold text-accent">{goal.targetAmount.toLocaleString('fr-FR')} FCFA</span>
+                            </p>
+                            {monthlyNeeded && !isCompleted && (
+                                <p className="text-xs md:text-sm font-semibold text-accent flex items-center gap-1.5 whitespace-nowrap">
+                                    <Zap className="w-3.5 h-3.5" fill="currentColor" /> {monthlyNeeded.toLocaleString('fr-FR')} FCFA / mois
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>
 
-                {/* Barre de progression */}
-                <div className="w-full">
-                    <div className="flex justify-between text-sm mb-1 flex-wrap gap-2">
-                        <span className="font-medium">{Math.round(percentage)}% atteint</span>
+                {/* Barre de progression avec jalons */}
+                <div className="w-full relative z-10">
+                    <div className="flex justify-between text-sm font-bold mb-2 flex-wrap gap-2">
+                        <span className="text-accent underline decoration-2 underline-offset-4">{Math.round(percentage)}% atteint</span>
                         {goal.deadline && (
-                            <span className={`text-xs ${isLate ? 'text-error font-semibold' : 'text-gray-400'}`}>
+                            <span className={`text-xs flex items-center gap-1 px-2 py-0.5 rounded-full ${isLate ? 'bg-error text-white font-bold' : 'bg-base-200 text-gray-500'}`}>
+                                <Clock className="w-3 h-3" />
                                 {isLate
                                     ? `Délai dépassé !`
                                     : daysLeft === 0 ? "Dernier jour !"
-                                    : daysLeft !== null ? `${daysLeft} jour${daysLeft > 1 ? 's' : ''} restant${daysLeft > 1 ? 's' : ''}`
+                                    : daysLeft !== null ? `${daysLeft}j restant${daysLeft > 1 ? 's' : ''}`
                                     : ''}
                             </span>
                         )}
                     </div>
-                    <progress
-                        className={`progress w-full h-3 ${getProgressColor()}`}
-                        value={percentage}
-                        max="100"
-                    />
-                    <div className="flex justify-between text-[10px] md:text-xs mt-1 text-gray-500 flex-wrap gap-x-4 gap-y-1">
-                        <span>{goal.currentAmount.toLocaleString('fr-FR')} FCFA épargnés</span>
-                        <span>Reste : {remaining.toLocaleString('fr-FR')} FCFA</span>
+                    
+                    <div className="relative pt-1">
+                        <progress
+                            className={`progress w-full h-4 shadow-sm ${getProgressColor()}`}
+                            value={percentage}
+                            max="100"
+                        />
+                        {/* Jalon 50% */}
+                        <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-base-100/30 z-20 pointer-events-none" />
+                    </div>
+
+                    <div className="flex justify-between text-[10px] md:text-xs mt-2 text-gray-500 font-medium">
+                        <span className="bg-base-200 px-2 py-0.5 rounded">{goal.currentAmount.toLocaleString('fr-FR')} FCFA fondus</span>
+                        <span className="bg-base-200 px-2 py-0.5 rounded italic">Reste : {remaining.toLocaleString('fr-FR')} FCFA</span>
                     </div>
                 </div>
 
+                {/* Conseil Proactif Intégré */}
+                {pMessage && !isCompleted && (
+                    <div className={`p-3 rounded-xl border flex items-start gap-2 shadow-sm ${pStatus === 'critical' ? 'bg-error/10 border-error/20 text-error' : pStatus === 'warning' ? 'bg-warning/10 border-warning/20 text-warning-content' : 'bg-accent/5 border-accent/10 text-accent-content'}`}>
+                        <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs font-bold leading-tight">{pMessage}</p>
+                    </div>
+                )}
+
                 {/* Ajout de fonds (désactivé si objectif atteint) */}
                 {!isCompleted && (
-                    <div className="flex gap-2 w-full mt-2">
-                        <input
-                            type="number"
-                            placeholder="Montant..."
-                            className="input input-bordered input-sm flex-1 min-w-0"
-                            value={amountToAdd}
-                            onChange={(e) => setAmountToAdd(e.target.value)}
-                        />
-                        <button onClick={handleAddFunds} className="btn btn-accent btn-sm font-semibold flex-shrink-0">
-                            + Épargner
+                    <div className="flex items-center gap-2 w-full mt-2 relative z-10">
+                        <div className="relative flex-1 group">
+                            <input
+                                type="number"
+                                placeholder="Montant..."
+                                className="input input-bordered input-sm w-full font-bold focus:border-accent"
+                                value={amountToAdd}
+                                onChange={(e) => setAmountToAdd(e.target.value)}
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400 group-focus-within:text-accent">FCFA</span>
+                        </div>
+                        <button onClick={handleAddFunds} className="btn btn-accent btn-sm font-black flex-shrink-0 shadow-lg hover:shadow-accent/40 active:scale-95 transition-all">
+                            BOOSTER ⚡
                         </button>
                     </div>
                 )}
 
                 {isCompleted && (
-                    <div className="text-center text-success text-sm font-bold py-1">
+                    <div className="text-center text-success text-sm font-bold py-2 bg-success/10 rounded-xl relative z-10 border border-success/20">
                         🎉 Félicitations ! Objectif atteint !
                     </div>
                 )}
